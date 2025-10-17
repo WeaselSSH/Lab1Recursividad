@@ -10,14 +10,17 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 public class MenuInicial extends JFrame {
 
     private JPanel panelPrincipal, panelNorte, panelSur, panelCentro;
-    private JLabel lblTitulo, lblCorreo, lblContrasenia;
-    private JTextField txtCorreo, txtContrasenia;
+    private JLabel lblTitulo, lblCorreo, lblContrasenia, lblNombre;
+    private JTextField txtCorreo, txtNombre;
+    private JPasswordField txtContrasenia;
     private JButton btnLogin, btnCrearCuenta, btnSalir;
 
     public static EmailAccount[] cuentas = new EmailAccount[10];
@@ -41,7 +44,7 @@ public class MenuInicial extends JFrame {
         panelPrincipal.add(panelNorte, BorderLayout.NORTH);
 
         panelSur = crearPanelTransparente();
-        panelSur.setPreferredSize(new Dimension(0, 100));
+        panelSur.setPreferredSize(new Dimension(0, 70));
         panelPrincipal.add(panelSur, BorderLayout.SOUTH);
 
         panelCentro = crearPanelTransparente();
@@ -60,31 +63,136 @@ public class MenuInicial extends JFrame {
         lblContrasenia = crearLabel("Contraseña:", 125, 75, 225, 40);
         panelCentro.add(lblContrasenia);
 
-        txtContrasenia = crearTextField(225, 85, 190, 20);
+        txtContrasenia = crearPasswordField(225, 85, 190, 20);
         panelCentro.add(txtContrasenia);
 
-        btnLogin = crearBoton("Iniciar Sesión", 155, 155, 110, 35);
+        lblNombre = crearLabel("Nombre:", 125, 115, 220, 40);
+        panelCentro.add(lblNombre);
+
+        txtNombre = crearTextField(195, 125, 220, 20);
+        panelCentro.add(txtNombre);
+
+        btnLogin = crearBoton("Iniciar Sesión", 155, 175, 110, 35);
         panelCentro.add(btnLogin);
 
-        btnCrearCuenta = crearBoton("Crear Cuenta", 285, 155, 110, 35);
+        btnCrearCuenta = crearBoton("Crear Cuenta", 285, 175, 110, 35);
         panelCentro.add(btnCrearCuenta);
 
-        btnSalir = crearBoton("Salir", 425, 50, 100, 30);
+        btnSalir = crearBoton("Salir", 425, 20, 100, 30);
         panelSur.add(btnSalir);
 
-        btnLogin.addActionListener(e -> login());
+        btnLogin.addActionListener(e -> {
+            String pass = new String(txtContrasenia.getPassword());
+
+            login(txtCorreo.getText().trim(), pass);
+        });
+
         btnSalir.addActionListener(e -> System.exit(0));
-        btnCrearCuenta.addActionListener(e -> crearCuenta());
+
+        btnCrearCuenta.addActionListener(e -> {
+            String pass = new String(txtContrasenia.getPassword());
+
+            crearCuenta(txtCorreo.getText().trim(), txtNombre.getText().trim(), pass);
+        });
 
         setContentPane(panelPrincipal);
     }
 
-    private void login() {
+    private boolean login(String correo, String contrasenia) {
+        if (correo.isEmpty() || contrasenia.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Completa correo y contraseña.");
+            return false;
+        }
 
+        int i = buscarCuenta(correo, 0);
+        if (i == -1) {
+            JOptionPane.showMessageDialog(this, "Error: correo no existe.");
+            return false;
+        }
+
+        if (cuentas[i].getPassword().equals(contrasenia)) {
+            accountActual = cuentas[i];
+            new MenuPrincipal().setVisible(true);
+            this.dispose();
+            return true;
+        } else {
+            JOptionPane.showMessageDialog(this, "Error: contraseña incorrecta.");
+            return false;
+        }
     }
 
-    private void crearCuenta() {
+    private int buscarCuenta(String correo, int i) {
+        if (i >= cuentas.length) {
+            return -1;
+        }
 
+        EmailAccount acc = cuentas[i];
+        if (acc != null && acc.getDireccionEmail().equalsIgnoreCase(correo)) {
+            return i;
+        }
+        return buscarCuenta(correo, i + 1);
+    }
+
+    private void crearCuenta(String correo, String nombre, String contrasenia) {
+        if (correo.isEmpty() || nombre.isEmpty() || contrasenia.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Completa correo, nombre y contraseña.");
+            return;
+        }
+
+        int pos = primeraPosicionLibre();
+        if (pos == -1) {
+            JOptionPane.showMessageDialog(this, "No hay espacio para más cuentas.");
+            return;
+        }
+
+        if (emailExiste(correo)) {
+            JOptionPane.showMessageDialog(this, "Ese correo ya existe.");
+            return;
+        }
+
+        String msg = validarPassword(contrasenia);
+        if (msg != null) {
+            JOptionPane.showMessageDialog(this, msg);
+            return;
+        }
+
+        cuentas[pos] = new EmailAccount(correo, contrasenia, nombre);
+        accountActual = cuentas[pos];
+
+        JOptionPane.showMessageDialog(this, "Cuenta creada con éxito.");
+        new MenuPrincipal().setVisible(true);
+        this.dispose();
+    }
+
+    private int primeraPosicionLibre() {
+        return primeraPosicionLibre(0);
+    }
+
+    private int primeraPosicionLibre(int i) {
+        if (i >= cuentas.length) {
+            return -1;
+        }
+        return (cuentas[i] == null) ? i : primeraPosicionLibre(i + 1);
+    }
+
+    private boolean emailExiste(String correo) {
+        return buscarCuenta(correo, 0) != -1;
+    }
+
+    private String validarPassword(String s) {
+        if (s.length() < 5) {
+            return "La contraseña debe tener al menos 5 caracteres.";
+        }
+        if (!s.matches(".*[A-Z].*")) {
+            return "Debe contener al menos una letra mayúscula.";
+        }
+        if (!s.matches(".*\\d.*")) {
+            return "Debe contener al menos un número.";
+        }
+        if (!s.matches(".*[^a-zA-Z0-9].*")) {
+            return "Debe contener al menos un símbolo.";
+        }
+        return null;
     }
 
     private JLabel crearLabel(String texto, int x, int y, int w, int h) {
@@ -97,6 +205,18 @@ public class MenuInicial extends JFrame {
 
     private JTextField crearTextField(int x, int y, int w, int h) {
         JTextField tf = new JTextField();
+        tf.setBounds(x, y, w, h);
+        tf.setBackground(Color.decode("#1A2332"));
+        tf.setForeground(Color.decode("#E6EDF7"));
+        tf.setCaretColor(Color.decode("#E6EDF7"));
+        tf.setSelectionColor(Color.decode("#334155"));
+        tf.setSelectedTextColor(Color.decode("#E6EDF7"));
+        tf.setBorder(BorderFactory.createLineBorder(Color.decode("#374151")));
+        return tf;
+    }
+
+    private JPasswordField crearPasswordField(int x, int y, int w, int h) {
+        JPasswordField tf = new JPasswordField();
         tf.setBounds(x, y, w, h);
         tf.setBackground(Color.decode("#1A2332"));
         tf.setForeground(Color.decode("#E6EDF7"));
