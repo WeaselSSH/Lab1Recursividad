@@ -6,16 +6,19 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JTable;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.JTable;
 import javax.swing.JScrollPane;
+import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
 
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
@@ -23,10 +26,9 @@ import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 public class MenuPrincipal extends JFrame {
 
     private JPanel panelPrincipal, panelNorte, panelSur, panelCentro;
-    private JLabel lblTitulo;
-    private JButton btnSalir, btnMandar, btnLeer, btnLimpiar, btnBuscar;
+    private JLabel lblTitulo, lblUsuario, lblFecha, lblHora;
+    private JButton btnSalir, btnMandar, btnLeer, btnLimpiar, btnBuscar, btnVerInbox;
 
-    // Tabla Inbox
     private JTable tblInbox;
     private DefaultTableModel inboxModel;
     private JScrollPane spInbox;
@@ -34,7 +36,7 @@ public class MenuPrincipal extends JFrame {
     public MenuPrincipal() {
         super("Mensajería");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(700, 720);
+        setSize(760, 760);
         setLocationRelativeTo(null);
         initComponents();
         cargarInboxDe(MenuInicial.accountActual);
@@ -42,43 +44,54 @@ public class MenuPrincipal extends JFrame {
     }
 
     private void initComponents() {
-        //paneles
         panelPrincipal = crearPanelGradiente(new Color(0x050607), new Color(0x0F1115));
         panelPrincipal.setLayout(new BorderLayout());
 
         panelNorte = crearPanelTransparente();
-        panelNorte.setPreferredSize(new Dimension(0, 55));
+        panelNorte.setPreferredSize(new Dimension(0, 70));
         panelPrincipal.add(panelNorte, BorderLayout.NORTH);
 
         panelSur = crearPanelTransparente();
-        panelSur.setPreferredSize(new Dimension(0, 70));
+        panelSur.setPreferredSize(new Dimension(0, 85));
         panelPrincipal.add(panelSur, BorderLayout.SOUTH);
 
         panelCentro = crearPanelTransparente();
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
-        // Título
-        lblTitulo = crearLabel("Menu Principal", 280, 20, 220, 40);
+        lblTitulo = crearLabel("Menú Principal", 20, 10, 220, 28);
         lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, 22f));
         panelNorte.add(lblTitulo);
 
-        // Botones inferiores
-        btnSalir = crearBoton("Salir", 535, 20, 100, 30);
+        lblUsuario = crearLabel("", 250, 10, 460, 24);
+        panelNorte.add(lblUsuario);
+
+        lblFecha = crearLabel("", 250, 36, 180, 24);
+        panelNorte.add(lblFecha);
+
+        lblHora = crearLabel("", 440, 36, 220, 24);
+        panelNorte.add(lblHora);
+
         panelSur.setLayout(null);
+
+        btnSalir = crearBoton("Salir", 620, 25, 100, 34);
         panelSur.add(btnSalir);
 
         panelCentro.setLayout(null);
-        btnMandar = crearBoton("Mandar Correo", 110, 450, 130, 32);
+
+        btnMandar = crearBoton("Mandar Correo", 80, 470, 150, 34);
         panelCentro.add(btnMandar);
 
-        btnLeer = crearBoton("Leer Correo", 250, 450, 120, 32);
+        btnLeer = crearBoton("Leer Correo", 240, 470, 140, 34);
         panelCentro.add(btnLeer);
 
-        btnLimpiar = crearBoton("Limpiar Inbox", 380, 450, 130, 32);
+        btnLimpiar = crearBoton("Limpiar Inbox", 390, 470, 150, 34);
         panelCentro.add(btnLimpiar);
 
-        btnBuscar = crearBoton("Buscar Correo", 520, 450, 130, 32);
+        btnBuscar = crearBoton("Buscar Correo", 550, 470, 150, 34);
         panelCentro.add(btnBuscar);
+
+        btnVerInbox = crearBoton("Ver Inbox", 320, 515, 120, 32);
+        panelCentro.add(btnVerInbox);
 
         String[] columnas = {"Posición", "Emisor", "Asunto", "Fecha", "Hora", "Leído"};
         inboxModel = new DefaultTableModel(columnas, 0) {
@@ -105,20 +118,43 @@ public class MenuPrincipal extends JFrame {
 
         spInbox = new JScrollPane(tblInbox);
         spInbox.setBorder(BorderFactory.createLineBorder(Color.decode("#374151")));
-        spInbox.setBounds(40, 50, 620, 380);
+        spInbox.setBounds(40, 70, 660, 380);
         panelCentro.add(spInbox);
 
         btnSalir.addActionListener(e -> {
             new MenuInicial().setVisible(true);
             dispose();
         });
-
         btnMandar.addActionListener(e -> abrirDialogEnviar());
         btnLeer.addActionListener(e -> leerSeleccionado());
         btnLimpiar.addActionListener(e -> limpiarLeidos());
-        btnBuscar.addActionListener(e -> buscar());
+        btnBuscar.addActionListener(e -> buscarPorEmisor());
+        btnVerInbox.addActionListener(e -> verInboxPlano());
 
         setContentPane(panelPrincipal);
+        refrescarDatosDeUsuario();
+        iniciarReloj();
+    }
+
+    private void refrescarDatosDeUsuario() {
+        EmailAccount acc = MenuInicial.accountActual;
+        if (acc == null) {
+            lblUsuario.setText("Usuario: (no iniciado)");
+        } else {
+            lblUsuario.setText("Usuario: " + acc.getNombreUsuario() + "  <" + acc.getDireccionEmail() + ">");
+        }
+    }
+
+    private void iniciarReloj() {
+        Timer t = new Timer(1000, e -> {
+            Calendar ahora = Calendar.getInstance();
+            SimpleDateFormat f1 = new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat f2 = new SimpleDateFormat("hh : mm : ss - a");
+            lblFecha.setText("Fecha: " + f1.format(ahora.getTime()));
+            lblHora.setText("Hora: " + f2.format(ahora.getTime()));
+        });
+        t.setRepeats(true);
+        t.start();
     }
 
     public void cargarInboxDe(EmailAccount cuenta) {
@@ -143,7 +179,6 @@ public class MenuPrincipal extends JFrame {
         if (acc == null) {
             return;
         }
-
         int row = tblInbox.getSelectedRow();
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un correo en la tabla.");
@@ -151,7 +186,6 @@ public class MenuPrincipal extends JFrame {
         }
         row = tblInbox.convertRowIndexToModel(row);
         int pos = (int) inboxModel.getValueAt(row, 0);
-
         acc.leerEmail(pos);
         cargarInboxDe(acc);
     }
@@ -161,63 +195,54 @@ public class MenuPrincipal extends JFrame {
         if (acc == null) {
             return;
         }
-
         acc.eliminarLeidos();
         cargarInboxDe(acc);
-
         int tot = acc.contarTotales();
         int sin = acc.contarSinLeer();
         JOptionPane.showMessageDialog(this, "Total: " + tot + " | Sin leer: " + sin);
     }
 
-    private void buscar() {
+    private void buscarPorEmisor() {
         EmailAccount acc = MenuInicial.accountActual;
         if (acc == null) {
             return;
         }
-
-        String[] opciones = {"Por emisor", "Por asunto", "Ver todos"};
-        int op = JOptionPane.showOptionDialog(
-                this, "¿Cómo deseas buscar?", "Buscar correo",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, opciones, opciones[0]);
-
-        if (op == 2 || op == JOptionPane.CLOSED_OPTION) { // Ver todos / cerrar
+        String[] opciones = {"Por emisor", "Ver todos"};
+        int op = JOptionPane.showOptionDialog(this, "Búsqueda:", "Buscar correo", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[0]);
+        if (op == 1 || op == JOptionPane.CLOSED_OPTION) {
             cargarInboxDe(acc);
             return;
         }
-
-        String q = JOptionPane.showInputDialog(this, "Texto a buscar:");
+        String q = JOptionPane.showInputDialog(this, "Emisor a buscar:");
         if (q == null || q.trim().isEmpty()) {
             return;
         }
         q = q.trim();
-
         Object[][] all = acc.toInboxRows();
         java.util.List<Object[]> filtradas = new java.util.ArrayList<>();
-
-        if (op == 0) {
-            for (Object[] r : all) {
-                String emisor = String.valueOf(r[1]);
-                if (emisor.toLowerCase().contains(q.toLowerCase())) {
-                    filtradas.add(r);
-                }
-            }
-        } else {
-            for (Object[] r : all) {
-                String asunto = String.valueOf(r[2]);
-                if (asunto.toLowerCase().contains(q.toLowerCase())) {
-                    filtradas.add(r);
-                }
+        for (Object[] r : all) {
+            String emisor = String.valueOf(r[1]);
+            if (emisor.toLowerCase().contains(q.toLowerCase())) {
+                filtradas.add(r);
             }
         }
-
         setInboxData(filtradas.toArray(new Object[0][]));
+        JOptionPane.showMessageDialog(this, "Coincidencias: " + filtradas.size() + "\nTotal: " + acc.contarTotales() + "\nSin leer: " + acc.contarSinLeer());
+    }
 
-        JOptionPane.showMessageDialog(this,
-                "Coincidencias: " + filtradas.size()
-                + "\nTotal: " + acc.contarTotales()
-                + "\nSin leer: " + acc.contarSinLeer());
+    private void verInboxPlano() {
+        EmailAccount acc = MenuInicial.accountActual;
+        if (acc == null) {
+            return;
+        }
+        JTextArea ta = new JTextArea(acc.printInbox());
+        ta.setEditable(false);
+        ta.setBackground(Color.decode("#0F1115"));
+        ta.setForeground(Color.decode("#E6EDF7"));
+        ta.setCaretColor(Color.decode("#E6EDF7"));
+        JScrollPane sp = new JScrollPane(ta);
+        sp.setPreferredSize(new Dimension(620, 420));
+        JOptionPane.showMessageDialog(this, sp, "Inbox", JOptionPane.PLAIN_MESSAGE);
     }
 
     private void abrirDialogEnviar() {
@@ -239,7 +264,7 @@ public class MenuPrincipal extends JFrame {
         JLabel l3 = etiqueta("Contenido:", 14);
         l3.setBounds(10, 126, 100, 24);
         p.add(l3);
-        JTextArea txtContenido = new JTextArea();
+        javax.swing.JTextArea txtContenido = new javax.swing.JTextArea();
         txtContenido.setLineWrap(true);
         txtContenido.setWrapStyleWord(true);
         txtContenido.setBackground(Color.decode("#111827"));
@@ -250,10 +275,7 @@ public class MenuPrincipal extends JFrame {
         sp.setBounds(10, 150, 360, 140);
         p.add(sp);
 
-        int res = JOptionPane.showConfirmDialog(
-                this, p, "Mandar Correo",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE
-        );
+        int res = JOptionPane.showConfirmDialog(this, p, "Mandar Correo", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (res != JOptionPane.OK_OPTION) {
             return;
         }
@@ -273,13 +295,8 @@ public class MenuPrincipal extends JFrame {
             return;
         }
 
-        Email email = new Email(
-                MenuInicial.accountActual != null ? MenuInicial.accountActual.getDireccionEmail()
-                        : "sistema@localhost",
-                asunto,
-                contenido
-        );
-
+        String emisor = (MenuInicial.accountActual != null) ? MenuInicial.accountActual.getDireccionEmail() : "sistema@localhost";
+        Email email = new Email(emisor, asunto, contenido);
         boolean ok = dest.recibirEmail(email);
         if (!ok) {
             JOptionPane.showMessageDialog(this, "No entregado: inbox del destinatario está lleno.");
@@ -288,8 +305,7 @@ public class MenuPrincipal extends JFrame {
 
         JOptionPane.showMessageDialog(this, "Envío exitoso a " + para);
 
-        if (MenuInicial.accountActual != null
-                && MenuInicial.accountActual.getDireccionEmail().equalsIgnoreCase(para)) {
+        if (MenuInicial.accountActual != null && MenuInicial.accountActual.getDireccionEmail().equalsIgnoreCase(para)) {
             cargarInboxDe(MenuInicial.accountActual);
         }
     }
@@ -360,9 +376,5 @@ public class MenuPrincipal extends JFrame {
         label.setForeground(Color.decode("#E6EDF7"));
         label.setFont(label.getFont().deriveFont(Font.BOLD, size));
         return label;
-    }
-
-    public static void main(String[] args) {
-        new MenuPrincipal().setVisible(true);
     }
 }

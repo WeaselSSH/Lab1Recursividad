@@ -50,11 +50,9 @@ public class EmailAccount {
                 count++;
             }
         }
-
         Object[][] rows = new Object[count][6];
         SimpleDateFormat FFECHA = new SimpleDateFormat("dd/MM/yyyy");
-        SimpleDateFormat FHORA = new SimpleDateFormat("hh:mm:ss a");
-
+        SimpleDateFormat FHORA = new SimpleDateFormat("hh : mm : ss - a");
         int k = 0;
         for (int i = 0; i < inbox.length; i++) {
             Email e = inbox[i];
@@ -73,17 +71,14 @@ public class EmailAccount {
 
     public String printInbox() {
         Calendar ahora = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a");
         String s = "";
         s += "Fecha actual: " + sdf.format(ahora.getTime()) + "\n";
         s += "INBOX de " + nombreUsuario + " <" + direccionEmail + ">\n";
         s += "-----------------------------------------------------\n";
         s += "POSICIÓN – EMISOR – ASUNTO – [LEÍDO / SIN LEER]\n";
-
         int total = 0;
         int sinLeer = 0;
-
         for (int i = 0; i < inbox.length; i++) {
             Email em = inbox[i];
             if (em != null) {
@@ -92,16 +87,12 @@ public class EmailAccount {
                 if (!leido) {
                     sinLeer++;
                 }
-
-                s += i + " – " + em.getEmisor() + " – " + em.getAsunto()
-                        + " – [" + (leido ? "LEÍDO" : "SIN LEER") + "]\n";
+                s += i + " – " + em.getEmisor() + " – " + em.getAsunto() + " – [" + (leido ? "LEÍDO" : "SIN LEER") + "]\n";
             }
         }
-
         s += "-----------------------------------------------------\n";
         s += "Total de correos: " + total + "\n";
         s += "Correos sin leer: " + sinLeer + "\n";
-
         return s;
     }
 

@@ -1,32 +1,24 @@
 package javaemail;
 
-import java.util.Calendar;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class Email {
 
-    // definir atributos
-    private String emisor;
-    private String asunto;
-    private String contenido;
+    private final String emisor;
+    private final String asunto;
+    private final String contenido;
+    private final Calendar fechaEnvio;
     private boolean leido;
-    private Calendar fechaEnvio;
 
-    // Crear el constructor
     public Email(String emisor, String asunto, String contenido) {
         this.emisor = emisor;
         this.asunto = asunto;
         this.contenido = contenido;
-
-        // Inicializar leido en false
-        this.leido = false;
-
-        // Asignar la fecha actual
         this.fechaEnvio = Calendar.getInstance();
-
+        this.leido = false;
     }
 
-    // Crear métodos (getters) para obtener cada atributo
     public String getEmisor() {
         return emisor;
     }
@@ -39,32 +31,28 @@ public class Email {
         return contenido;
     }
 
-    public boolean isLeido() {
-        return leido;
-    }
-
     public Calendar getFechaEnvio() {
         return fechaEnvio;
     }
 
-    // Función marcarLeido()
+    public boolean isLeido() {
+        return leido;
+    }
+
     public void marcarLeido() {
-        this.leido = true;
+        leido = true;
     }
 
-    public boolean leer() {
-        this.leido = true;
-        return this.leido;
-    }
-
-    // Función print()
     public String print() {
-        SimpleDateFormat fecha = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        String estado = leido ? "Leido" : "Sin Leer";
-        return "De: [" + emisor + "] "
-                + "\nAsunto: [" + asunto + "] "
-                + "\nContenido: [" + contenido + "] "
-                + "\nFecha: [" + fecha.format(fechaEnvio.getTime()) + "] "
-                + "\nEstado: [" + estado + "]";
+        SimpleDateFormat f1 = new SimpleDateFormat("dd/MM/yyyy");
+        SimpleDateFormat f2 = new SimpleDateFormat("hh : mm : ss - a");
+        String s = "";
+        s += "De: " + emisor + "\n";
+        s += "Asunto: " + asunto + "\n";
+        s += "Fecha: " + f1.format(fechaEnvio.getTime()) + "  Hora: " + f2.format(fechaEnvio.getTime()) + "\n";
+        s += "Estado: " + (leido ? "LEÍDO" : "SIN LEER") + "\n";
+        s += "Contenido:\n";
+        s += contenido + "\n";
+        return s;
     }
 }
