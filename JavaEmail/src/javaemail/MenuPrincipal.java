@@ -12,21 +12,18 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
-public class MenuInicial extends JFrame {
+public class MenuPrincipal extends JFrame {
 
     private JPanel panelPrincipal, panelNorte, panelSur, panelCentro;
-    private JLabel lblTitulo, lblCorreo, lblContrasenia;
-    private JTextField txtCorreo, txtContrasenia;
-    private JButton btnLogin, btnCrearCuenta, btnSalir;
+    private JLabel lblTitulo;
+    private JButton btnSalir, btnMandar;
 
-    public static EmailAccount[] cuentas = new EmailAccount[10];
-    public static EmailAccount accountActual = null;
-
-    public MenuInicial() {
+    public MenuPrincipal() {
         super("Mensajería");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(570, 380);
+        setSize(570, 480);
         setLocationRelativeTo(null);
         initComponents();
         setVisible(true);
@@ -47,44 +44,17 @@ public class MenuInicial extends JFrame {
         panelCentro = crearPanelTransparente();
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
-        lblTitulo = crearLabel("Menu Inicial", 215, 20, 220, 40);
+        lblTitulo = crearLabel("Menu Principal", 205, 20, 220, 40);
         lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, 22f));
         panelNorte.add(lblTitulo);
-
-        lblCorreo = crearLabel("Correo:", 125, 30, 220, 40);
-        panelCentro.add(lblCorreo);
-
-        txtCorreo = crearTextField(195, 40, 220, 20);
-        panelCentro.add(txtCorreo);
-
-        lblContrasenia = crearLabel("Contraseña:", 125, 75, 225, 40);
-        panelCentro.add(lblContrasenia);
-
-        txtContrasenia = crearTextField(225, 85, 190, 20);
-        panelCentro.add(txtContrasenia);
-
-        btnLogin = crearBoton("Iniciar Sesión", 155, 155, 110, 35);
-        panelCentro.add(btnLogin);
-
-        btnCrearCuenta = crearBoton("Crear Cuenta", 285, 155, 110, 35);
-        panelCentro.add(btnCrearCuenta);
 
         btnSalir = crearBoton("Salir", 425, 50, 100, 30);
         panelSur.add(btnSalir);
 
-        btnLogin.addActionListener(e -> login());
-        btnSalir.addActionListener(e -> System.exit(0));
-        btnCrearCuenta.addActionListener(e -> crearCuenta());
+        btnMandar = crearBoton("Mandar Correo", 105, 50, 120, 40);
+        panelCentro.add(btnMandar);
 
         setContentPane(panelPrincipal);
-    }
-
-    private void login() {
-
-    }
-
-    private void crearCuenta() {
-
     }
 
     private JLabel crearLabel(String texto, int x, int y, int w, int h) {
@@ -138,6 +108,6 @@ public class MenuInicial extends JFrame {
     }
 
     public static void main(String[] args) {
-        new MenuInicial().setVisible(true);
+        new MenuPrincipal().setVisible(true);
     }
 }
