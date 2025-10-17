@@ -12,15 +12,22 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+<<<<<<< HEAD
 import javax.swing.JTextArea;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
+=======
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+import javax.swing.table.DefaultTableModel;
+>>>>>>> b696da1561c498f7730685e78bdd250e1b7bcf2c
 
 public class MenuPrincipal extends JFrame {
 
     private JPanel panelPrincipal, panelNorte, panelSur, panelCentro;
     private JLabel lblTitulo;
+<<<<<<< HEAD
     private JButton btnSalir, btnMandar;
     
     // Atributos de Sección - Mandar Correo
@@ -29,40 +36,91 @@ public class MenuPrincipal extends JFrame {
     private JTextField txtAsunto;
     private JTextArea txtContenido;
     private JButton btnEnviar;
+=======
+    private JButton btnRegresar, btnMandar;
+
+    private JTable tblInbox;
+    private DefaultTableModel inboxModel;
+    private JScrollPane spInbox;
+>>>>>>> b696da1561c498f7730685e78bdd250e1b7bcf2c
 
     public MenuPrincipal() {
         super("Mensajería");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(570, 480);
+        setSize(700, 620);
         setLocationRelativeTo(null);
         initComponents();
         setVisible(true);
     }
 
     private void initComponents() {
+        //paneles
         panelPrincipal = crearPanelGradiente(new Color(0x050607), new Color(0x0F1115));
         panelPrincipal.setLayout(new BorderLayout());
 
+        //resto de paneles
         panelNorte = crearPanelTransparente();
         panelNorte.setPreferredSize(new Dimension(0, 55));
         panelPrincipal.add(panelNorte, BorderLayout.NORTH);
 
         panelSur = crearPanelTransparente();
-        panelSur.setPreferredSize(new Dimension(0, 100));
+        panelSur.setPreferredSize(new Dimension(0, 70));
         panelPrincipal.add(panelSur, BorderLayout.SOUTH);
 
         panelCentro = crearPanelTransparente();
         panelPrincipal.add(panelCentro, BorderLayout.CENTER);
 
-        lblTitulo = crearLabel("Menu Principal", 205, 20, 220, 40);
+        //resto de ui
+        lblTitulo = crearLabel("Menu Principal", 280, 20, 220, 40);
         lblTitulo.setFont(lblTitulo.getFont().deriveFont(Font.BOLD, 22f));
         panelNorte.add(lblTitulo);
 
+<<<<<<< HEAD
         btnSalir = crearBoton("Salir", 425, 50, 100, 30);
         panelSur.add(btnSalir);
         
         btnMandar = crearBoton("Mandar Correo", 105, 50, 120, 40);
+=======
+        btnRegresar = crearBoton("Regresar", 535, 20, 100, 30);
+        panelSur.add(btnRegresar);
+
+        btnMandar = crearBoton("Mandar Correo", 135, 380, 120, 40);
+>>>>>>> b696da1561c498f7730685e78bdd250e1b7bcf2c
         panelCentro.add(btnMandar);
+
+        String[] columnas = {"Posición", "Emisor", "Asunto", "Fecha", "Hora", "Leído"};
+        inboxModel = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int c) {
+                return c == 5 ? Boolean.class : String.class;
+            }
+        };
+
+        tblInbox = new JTable(inboxModel);
+        tblInbox.setRowHeight(24);
+        tblInbox.setForeground(new Color(0xE6EDF7));
+        tblInbox.setBackground(new Color(0x111418));
+        tblInbox.setGridColor(new Color(0x2B3B63));
+        tblInbox.getTableHeader().setForeground(Color.WHITE);
+        tblInbox.getTableHeader().setBackground(new Color(0x1A2332));
+
+        spInbox = new JScrollPane(tblInbox);
+        spInbox.setBorder(BorderFactory.createLineBorder(Color.decode("#374151")));
+        spInbox.setBounds(40, 50, 620, 300);
+        panelCentro.add(spInbox);
+
+        // Fila de prueba
+        inboxModel.addRow(new Object[]{1, "weaselssh@gmail.com", "Bienvenida", "17/10/2025", "09:12:05 AM", false});
+
+        btnRegresar.addActionListener(e -> {
+            new MenuInicial().setVisible(true);
+            this.dispose();
+        });
 
         setContentPane(panelPrincipal);
         
