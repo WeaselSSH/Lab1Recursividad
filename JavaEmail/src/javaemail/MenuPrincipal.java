@@ -37,6 +37,7 @@ public class MenuPrincipal extends JFrame {
         setSize(700, 720);
         setLocationRelativeTo(null);
         initComponents();
+        cargarInboxDe(MenuInicial.accountActual);
         setVisible(true);
     }
 
@@ -66,20 +67,17 @@ public class MenuPrincipal extends JFrame {
         panelSur.setLayout(null);
         panelSur.add(btnSalir);
 
-        btnMandar = crearBoton("Mandar Correo", 110, 450, 110, 32);
         panelCentro.setLayout(null);
+        btnMandar = crearBoton("Mandar Correo", 110, 450, 130, 32);
         panelCentro.add(btnMandar);
 
-        btnLeer = crearBoton("Leer Correo", 230, 450, 110, 32);
-        panelCentro.setLayout(null);
+        btnLeer = crearBoton("Leer Correo", 250, 450, 120, 32);
         panelCentro.add(btnLeer);
 
-        btnLimpiar = crearBoton("Limpiar Inbox", 350, 450, 110, 32);
-        panelCentro.setLayout(null);
+        btnLimpiar = crearBoton("Limpiar Inbox", 380, 450, 130, 32);
         panelCentro.add(btnLimpiar);
 
-        btnBuscar = crearBoton("Buscar Correo", 470, 450, 110, 32);
-        panelCentro.setLayout(null);
+        btnBuscar = crearBoton("Buscar Correo", 520, 450, 130, 32);
         panelCentro.add(btnBuscar);
 
         String[] columnas = {"Posición", "Emisor", "Asunto", "Fecha", "Hora", "Leído"};
@@ -98,6 +96,7 @@ public class MenuPrincipal extends JFrame {
         tblInbox = new JTable(inboxModel);
         tblInbox.setRowHeight(24);
         tblInbox.setAutoCreateRowSorter(true);
+        tblInbox.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         tblInbox.setForeground(new Color(0xE6EDF7));
         tblInbox.setBackground(new Color(0x111418));
         tblInbox.setGridColor(new Color(0x2B3B63));
@@ -109,17 +108,116 @@ public class MenuPrincipal extends JFrame {
         spInbox.setBounds(40, 50, 620, 380);
         panelCentro.add(spInbox);
 
-        // Demo
-        inboxModel.addRow(new Object[]{1, "weaselssh@gmail.com", "Bienvenida", "17/10/2025", "09:12:05 AM", false});
-
         btnSalir.addActionListener(e -> {
             new MenuInicial().setVisible(true);
             dispose();
         });
 
         btnMandar.addActionListener(e -> abrirDialogEnviar());
+        btnLeer.addActionListener(e -> leerSeleccionado());
+        btnLimpiar.addActionListener(e -> limpiarLeidos());
+        btnBuscar.addActionListener(e -> buscar());
 
         setContentPane(panelPrincipal);
+    }
+
+    public void cargarInboxDe(EmailAccount cuenta) {
+        if (cuenta == null) {
+            setInboxData(null);
+            return;
+        }
+        setInboxData(cuenta.toInboxRows());
+    }
+
+    public void setInboxData(Object[][] filas) {
+        inboxModel.setRowCount(0);
+        if (filas != null) {
+            for (Object[] f : filas) {
+                inboxModel.addRow(f);
+            }
+        }
+    }
+
+    private void leerSeleccionado() {
+        EmailAccount acc = MenuInicial.accountActual;
+        if (acc == null) {
+            return;
+        }
+
+        int row = tblInbox.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Selecciona un correo en la tabla.");
+            return;
+        }
+        row = tblInbox.convertRowIndexToModel(row);
+        int pos = (int) inboxModel.getValueAt(row, 0);
+
+        acc.leerEmail(pos);
+        cargarInboxDe(acc);
+    }
+
+    private void limpiarLeidos() {
+        EmailAccount acc = MenuInicial.accountActual;
+        if (acc == null) {
+            return;
+        }
+
+        acc.eliminarLeidos();
+        cargarInboxDe(acc);
+
+        int tot = acc.contarTotales();
+        int sin = acc.contarSinLeer();
+        JOptionPane.showMessageDialog(this, "Total: " + tot + " | Sin leer: " + sin);
+    }
+
+    private void buscar() {
+        EmailAccount acc = MenuInicial.accountActual;
+        if (acc == null) {
+            return;
+        }
+
+        String[] opciones = {"Por emisor", "Por asunto", "Ver todos"};
+        int op = JOptionPane.showOptionDialog(
+                this, "¿Cómo deseas buscar?", "Buscar correo",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, opciones, opciones[0]);
+
+        if (op == 2 || op == JOptionPane.CLOSED_OPTION) { // Ver todos / cerrar
+            cargarInboxDe(acc);
+            return;
+        }
+
+        String q = JOptionPane.showInputDialog(this, "Texto a buscar:");
+        if (q == null || q.trim().isEmpty()) {
+            return;
+        }
+        q = q.trim();
+
+        Object[][] all = acc.toInboxRows();
+        java.util.List<Object[]> filtradas = new java.util.ArrayList<>();
+
+        if (op == 0) {
+            for (Object[] r : all) {
+                String emisor = String.valueOf(r[1]);
+                if (emisor.toLowerCase().contains(q.toLowerCase())) {
+                    filtradas.add(r);
+                }
+            }
+        } else {
+            for (Object[] r : all) {
+                String asunto = String.valueOf(r[2]);
+                if (asunto.toLowerCase().contains(q.toLowerCase())) {
+                    filtradas.add(r);
+                }
+            }
+        }
+
+        setInboxData(filtradas.toArray(new Object[0][]));
+
+        JOptionPane.showMessageDialog(this,
+                "Coincidencias: " + filtradas.size()
+                + "\nTotal: " + acc.contarTotales()
+                + "\nSin leer: " + acc.contarSinLeer());
     }
 
     private void abrirDialogEnviar() {
@@ -169,7 +267,42 @@ public class MenuPrincipal extends JFrame {
             return;
         }
 
-        JOptionPane.showMessageDialog(this, "Simulado: envío exitoso a " + para);
+        EmailAccount dest = buscarCuenta(para, 0);
+        if (dest == null) {
+            JOptionPane.showMessageDialog(this, "Error: destinatario no existe.");
+            return;
+        }
+
+        Email email = new Email(
+                MenuInicial.accountActual != null ? MenuInicial.accountActual.getDireccionEmail()
+                        : "sistema@localhost",
+                asunto,
+                contenido
+        );
+
+        boolean ok = dest.recibirEmail(email);
+        if (!ok) {
+            JOptionPane.showMessageDialog(this, "No entregado: inbox del destinatario está lleno.");
+            return;
+        }
+
+        JOptionPane.showMessageDialog(this, "Envío exitoso a " + para);
+
+        if (MenuInicial.accountActual != null
+                && MenuInicial.accountActual.getDireccionEmail().equalsIgnoreCase(para)) {
+            cargarInboxDe(MenuInicial.accountActual);
+        }
+    }
+
+    private EmailAccount buscarCuenta(String correo, int i) {
+        if (MenuInicial.cuentas == null || i >= MenuInicial.cuentas.length) {
+            return null;
+        }
+        EmailAccount acc = MenuInicial.cuentas[i];
+        if (acc != null && acc.getDireccionEmail().equalsIgnoreCase(correo)) {
+            return acc;
+        }
+        return buscarCuenta(correo, i + 1);
     }
 
     private JLabel crearLabel(String texto, int x, int y, int w, int h) {
@@ -227,15 +360,6 @@ public class MenuPrincipal extends JFrame {
         label.setForeground(Color.decode("#E6EDF7"));
         label.setFont(label.getFont().deriveFont(Font.BOLD, size));
         return label;
-    }
-
-    public void setInboxData(Object[][] filas) {
-        inboxModel.setRowCount(0);
-        if (filas != null) {
-            for (Object[] f : filas) {
-                inboxModel.addRow(f);
-            }
-        }
     }
 
     public static void main(String[] args) {
